@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  # 1. Mock Local Cloud Services (AWS APIs) via LocalStack
+  localstack:
+    container_name: local-cloud-aws-mock
+    image: localstack/localstack:latest
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Edge Port
+      - "127.0.0.1:4510-4559:4510-4559"  # External services range
+    environment:
+      - SERVICES=s3,sqs,sns,lambda,dynamodb
+      - DEBUG=1
+    volumes:
+      - "./localstack_init:/etc/localstack/init/ready.d"
+      - "localstack_data:/var/lib/localstack"
+
+  # 2. Database Store (PostgreSQL) running on custom 7-series port
+  postgres:
+    container_name: local-cloud-database
+    image: postgres:15-alpine
+    ports:
+      - "127.0.0.1:7432:5432"            # Custom 7432 Port
+    environment:
+      - POSTGRES_DB=dev_sandbox
+      - POSTGRES_USER=sandbox_user
+      - POSTGRES_PASSWORD=sandbox_secret
+    volumes:
+      - "postgres_data:/var/lib/postgresql/data"
+
+  # 3. Redis Cache Store running on custom 7-series port
+  redis:
+    container_name: local-cloud-cache
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:7379:6379"            # Custom 7379 Port
+    volumes:
+      - "redis_data:/data"
+
+volumes:
+  localstack_data:
+  postgres_data:
+  redis_data:
